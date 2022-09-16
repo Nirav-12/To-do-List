@@ -2,17 +2,16 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  TextInput,
-  Button,
   FlatList,
   TouchableOpacity,
   StyleSheet,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomCheckbox from "./CustomCheckbox";
+import { MaterialIcons } from "@expo/vector-icons";
+import { FontAwesome } from "@expo/vector-icons";
 
-const ToDoList = () => {
-  const [task, setTask] = useState("");
+const ToDoList = ({ navigation }) => {
   const [tasks, setTasks] = useState([]);
 
   useEffect(() => {
@@ -38,16 +37,18 @@ const ToDoList = () => {
     }
   };
 
-  const addTask = () => {
-    if (task.trim()) {
-      const newTasks = [
-        ...tasks,
-        { id: Date.now().toString(), text: task, completed: false },
-      ];
-      setTasks(newTasks);
-      saveTasks(newTasks);
-      setTask("");
-    }
+  const addTask = (task) => {
+    const newTasks = [...tasks, task];
+    setTasks(newTasks);
+    saveTasks(newTasks);
+  };
+
+  const editTask = (updatedTask) => {
+    const newTasks = tasks.map((task) =>
+      task.id === updatedTask.id ? updatedTask : task
+    );
+    setTasks(newTasks);
+    saveTasks(newTasks);
   };
 
   const toggleTaskCompletion = (id) => {
@@ -67,13 +68,20 @@ const ToDoList = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>To-Do List</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Enter task"
-        value={task}
-        onChangeText={setTask}
-      />
-      <Button title="Add Task" onPress={addTask} />
+      {tasks.length == 0 && (
+        <View
+          style={{
+            justifyContent: "center",
+            alignItems: "center",
+            flex: 1,
+            marginTop: 50,
+            gap: 50,
+          }}
+        >
+          <Text style={{ fontSize: 25, color: "gray" }}>Nothing to Show </Text>
+          <FontAwesome name="list-alt" size={120} color="gray" />
+        </View>
+      )}
       <FlatList
         data={tasks}
         keyExtractor={(item) => item.id}
@@ -83,15 +91,44 @@ const ToDoList = () => {
               checked={item.completed}
               onPress={() => toggleTaskCompletion(item.id)}
             />
-            <Text style={[styles.task, item.completed && styles.completedTask]}>
-              {item.text}
-            </Text>
+            <View style={styles.taskDetails}>
+              <Text
+                style={[styles.task, item.completed && styles.completedTask]}
+              >
+                {item.title}
+              </Text>
+              <Text>{item.description}</Text>
+            </View>
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate("Add Task", { task: item, editTask })
+              }
+            >
+              <MaterialIcons
+                name="edit"
+                size={24}
+                color="black"
+                style={{ paddingHorizontal: 10 }}
+              />
+            </TouchableOpacity>
             <TouchableOpacity onPress={() => deleteTask(item.id)}>
-              <Text style={styles.delete}>Delete</Text>
+              <MaterialIcons
+                name="delete"
+                size={24}
+                color="black"
+                style={{ paddingHorizontal: 10 }}
+              />
             </TouchableOpacity>
           </View>
         )}
       />
+
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => navigation.navigate("Add Task", { addTask })}
+      >
+        <FontAwesome name="plus" size={24} color="white" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -101,16 +138,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: "#fff",
+    paddingTop: 50,
   },
   title: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 10,
-  },
-  input: {
-    borderColor: "#ddd",
-    borderWidth: 1,
-    padding: 10,
     marginBottom: 10,
   },
   taskContainer: {
@@ -121,16 +153,39 @@ const styles = StyleSheet.create({
     borderBottomColor: "#ddd",
     borderBottomWidth: 1,
   },
+  taskDetails: {
+    flex: 1,
+    marginLeft: 10,
+  },
   task: {
     fontSize: 18,
-    flex: 1,
   },
   completedTask: {
     textDecorationLine: "line-through",
     color: "#aaa",
   },
+  edit: {
+    color: "blue",
+    marginRight: 10,
+  },
   delete: {
     color: "red",
+  },
+  addButton: {
+    position: "absolute",
+    bottom: 30,
+    right: 30,
+    backgroundColor: "#007bff",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    elevation: 5,
   },
 });
 
